@@ -83,7 +83,7 @@ void sortStructure(){
     qsort((void*)names, size, sizeof(names[0]), comparator);
 }
 
-//
+//Removes surrounding immediate quotes from a string.
 char* removeQuotes(char* string){
     size_t length = strlen(string);
     if(length > 0){
@@ -135,6 +135,8 @@ int checkFirstLast(const char* string){
     return out;
 }
 
+//Increment the count of the name in the name structure.
+//If not present, add it and initialize.
 void incrementNameCount(char* name){
 
     dprintf("IncrementNameCount enter: name=%s\n", name);
@@ -169,6 +171,8 @@ void incrementNameCount(char* name){
 
 }
 
+//Checks the header for validity, checks for name/"name" field.
+//Keeps track of which fields require surrounding quotes.
 void headerChecker(){
 
     dprintf("Entered headerChecker...\n");
@@ -225,8 +229,12 @@ void headerChecker(){
         element = strtok(NULL, ",");
     }
 
-    //Decrements to go back to the last valid index.
-    //count--;
+    if(element == NULL){
+        dprintf("Invalid header... line overflow\n");
+        printf("Invalid Input Format.\n");
+        fclose(fileStream);
+        FAILURE_EXIT;
+    }
 
     //Recalculates the last string field and if it uses quotes, removing the '\n' character.
     if(lastChar(element) == '\n'){
@@ -245,6 +253,7 @@ void headerChecker(){
             column[count].quotes = 0;
         }
 
+        //Checks for name field.
         if(!strcmp(column[count].name, NAME)){
             nameCount++;
             name_quotes = 0;
@@ -258,6 +267,11 @@ void headerChecker(){
 
         dprintf("Element %d name = %s\n", count, column[count].name);
         dprintf("Element %d quotes = %d\n", count, column[count].quotes);
+    }else{
+        dprintf("Invalid header... how did we get here?\n");
+        printf("Invalid Input Format.\n");
+        fclose(fileStream);
+        FAILURE_EXIT;
     }
 
     //Records the last column index for future reference in parsing lines.
@@ -266,7 +280,7 @@ void headerChecker(){
 
     //If no valid column "name" or name.
     if(nameCount != 1){
-        dprintf("Invalid header... single valid NAME column not found");
+        dprintf("Invalid header... no name field.\n");
         printf("Invalid Input Format.\n");
         fclose(fileStream);
         FAILURE_EXIT;
@@ -279,6 +293,8 @@ void headerChecker(){
     }
 }
 
+//Scans each line, checking that the field is valid to the requirements of its column.
+//If field belongs to the name/"name" column, increment the field with incrementNameCount(field).
 int lineChecker(){
     int lineCount = 1;
     int index;
@@ -382,7 +398,7 @@ void fileChecker(char* filePath){
     return;
 }
 
-void main(int argc, char **argv){
+int main(int argc, char **argv){
 
     total_names = 0;
 
@@ -425,6 +441,5 @@ void main(int argc, char **argv){
     //Outputs 10 names with most occurances.
     print10Names();
 
-
-    return;   
+    return 0;   
 }
