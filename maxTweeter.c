@@ -19,7 +19,7 @@
 #include <string.h>
 
 //DEBUG_MODE: 0=disabled, 1=enabled.
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 #define MAX_LINE_LENGTH 1024
 #define MAX_FILE_LINES 20000
@@ -51,6 +51,7 @@ int name_quotes;
 int last_column_index;
 char* filePath;
 
+//Prints the 10 names that had the highest count in the input file.
 void print10Names(){
     int i;
     int listSize;
@@ -68,6 +69,7 @@ void print10Names(){
     return;
 }
 
+//Comparison function for the use of qsort.
 int comparator(const void* p1, const void* p2){
     int r = ((struct nameCount*)p1)->count;
     int l = ((struct nameCount*)p2)->count;
@@ -75,11 +77,13 @@ int comparator(const void* p1, const void* p2){
     return (l - r);
 }
 
+//Uses qsort to sort the datastructure names from greatest to least.
 void sortStructure(){
     int size = sizeof(names) / sizeof(names[0]);
     qsort((void*)names, size, sizeof(names[0]), comparator);
 }
 
+//
 char* removeQuotes(char* string){
     size_t length = strlen(string);
     if(length > 0){
@@ -109,7 +113,8 @@ int checkFirstLast(const char* string){
 
     if(string[0] == '"'){
         if(string[stringLength-1] != '"'){
-            printf("Field inconsistancy...Quote invalidation...\n");
+            dprintf("Field inconsistancy...Quote invalidation...\n");
+            printf("Invalid Input Format.\n");
             fclose(fileStream);
             FAILURE_EXIT;
         }else{
@@ -117,7 +122,8 @@ int checkFirstLast(const char* string){
         }
     }else{
         if(string[stringLength-1] == '"'){
-            printf("Field inconsistancy...Quote invalidation...\n");
+            dprintf("Field inconsistancy...Quote invalidation...\n");
+            printf("Invalid Input Format.\n");
             fclose(fileStream);
             FAILURE_EXIT;
         }else{
@@ -136,15 +142,12 @@ void incrementNameCount(char* name){
     int index;
     int found = 0;
     for(index = 0; found == 0 && index < MAX_FILE_LINES; index++ ){
-        dprintf("in loop!");
         if(!strcmp(name, names[index].name) || names[index].taken == 0){
             found = 1;
             break;
         }
-        dprintf("index = %d", index);
+        dprintf("index = %d\n", index);
     }
-
-    dprintf("forloop bypass\n");
 
     if(found){
         if(names[index].taken == 0){
@@ -157,9 +160,9 @@ void incrementNameCount(char* name){
         }
         return;
     }else{
-        //Pretty sure dead code, there should always be room in...
-        //...the names structure with the upper bound being MAX_FILE_LINES
-        printf("No room to add name to database...\n");
+        //Believed to be dead code, there should always be room in...
+        //...the names structure with the upper bound being MAX_FILE_LINES.
+        dprintf("No room to add name to database...\n");
         fclose(fileStream);
         FAILURE_EXIT;
     }
@@ -177,13 +180,15 @@ void headerChecker(){
     char* workingElement = NULL;
 
     if(fgets(lineBuffer, MAX_LINE_LENGTH, fileStream) == NULL){
-        printf("File contains no content...\n");
+        dprintf("File contains no content...\n");
+        printf("Invalid Input Format.\n");
         fclose(fileStream);
         FAILURE_EXIT;
     }
 
     if(lastChar(lineBuffer)!= '\n'){
-        printf("Line does not end with a \\n char...line length exceeds maxiumum...");
+        dprintf("Line does not end with a \\n char...line length exceeds maxiumum...");
+        printf("Invalid Input Format.\n");
         fclose(fileStream);
         FAILURE_EXIT;
     }
@@ -201,8 +206,6 @@ void headerChecker(){
         }else{
             column[count].quotes = 0;
         }
-
-        //column[count].quotes = checkFirstLast(element);
         
         if(!strcmp(element, NAME)){
             nameCount++;
@@ -263,7 +266,8 @@ void headerChecker(){
 
     //If no valid column "name" or name.
     if(nameCount != 1){
-        printf("Invalid header... single valid NAME column not found");
+        dprintf("Invalid header... single valid NAME column not found");
+        printf("Invalid Input Format.\n");
         fclose(fileStream);
         FAILURE_EXIT;
     }
@@ -280,6 +284,7 @@ int lineChecker(){
     int index;
     char* element;
     char* workingElement = NULL;
+
     while(fgets(lineBuffer, MAX_LINE_LENGTH, fileStream) != NULL && lineCount < MAX_FILE_LINES){
 
             element = strtok(lineBuffer, ",");
@@ -288,21 +293,21 @@ int lineChecker(){
             dprintf("Checking index = %d\n", index);
 
             if(!element){
-                printf("Row does not line with header1...\n");
+                dprintf("Row does not line with header1...\n");
+                printf("Invalid Input Format.\n");
                 fclose(fileStream);
                 FAILURE_EXIT;
             }
 
             if(column[index].quotes != checkFirstLast(element)){
-                printf("Quote mismatch of element1...\n");
+                dprintf("Quote mismatch of element1...\n");
+                printf("Invalid Input Format.\n");
                 fclose(fileStream);
                 FAILURE_EXIT;
             }
 
             if(index == name_index)
             {
-
-                dprintf("Where are we?\n");
                 if(name_quotes){
                     incrementNameCount(removeQuotes(element));
                 }else{
@@ -314,13 +319,15 @@ int lineChecker(){
         }
 
         if(!element){
-            printf("Row does not line with header2...\n");
+            dprintf("Row does not line with header2...\n");
+            printf("Invalid Input Format.\n");
             fclose(fileStream);
             FAILURE_EXIT;
         }
 
         if(lastChar(element) != '\n'){
-            printf("Row does not line with header3...\n");
+            dprintf("Row does not line with header3...\n");
+            printf("Invalid Input Format.\n");
             fclose(fileStream);
             FAILURE_EXIT;
         }
@@ -328,7 +335,8 @@ int lineChecker(){
         element[strlen(element)-1] = '\0';
 
         if(column[index].quotes != checkFirstLast(element)){
-            printf("Quote mismatch of element2...\n");
+            dprintf("Quote mismatch of element2...\n");
+            printf("Invalid Input Format.\n");
             fclose(fileStream);
             FAILURE_EXIT;
         }
@@ -342,13 +350,14 @@ int lineChecker(){
             }
         }
 
-        dprintf("LineCount = %d", lineCount);
+        dprintf("LineCount = %d\n", lineCount);
         lineCount++;
     }
 
     if(lineBuffer != NULL && lineCount == MAX_FILE_LINES){
         dprintf("LineBuffer = %s\n", lineBuffer);
-        printf("Exceeded maximum number of lines in file...\n");
+        dprintf("Exceeded maximum number of lines in file...\n");
+        printf("Invalid Input Format.\n");
         fclose(fileStream);
         FAILURE_EXIT;
     }
@@ -363,7 +372,8 @@ void fileChecker(char* filePath){
     fileStream = fopen(filePath, "r");
 
     if(!fileStream){
-        printf("File with provided path not found...\n");
+        dprintf("File with provided path not found...\n");
+        printf("File not found.\n");
         FAILURE_EXIT;
     }else{
         dprintf("File with provided path found and opened...\n");
@@ -378,20 +388,22 @@ void main(int argc, char **argv){
 
     //Checks correct number of passed arguements.
     if( argc < 2){
-        printf("No file path provided...\n");
+        dprintf("No file path provided...\n");
+        printf("Invalid number of arguements.\n");
         FAILURE_EXIT;
     }
     if( argc > 2){
-        printf("Too many arguements...\n");
+        dprintf("Too many arguements...\n");
+        printf("Invalid number of arguements.\n");
         FAILURE_EXIT;
     }
-    
-    dprintf("Arguments accepted...\n");
-  
+      
     filePath = malloc(sizeof(char) * strlen(argv[1]));
 
     if(!filePath){
         dprintf("Failed to allocate memory...\n");
+        printf("Memory allocation failure.\n");
+        FAILURE_EXIT;
     }
 
     //Save filePath arguement to filePath global variable.
@@ -399,15 +411,18 @@ void main(int argc, char **argv){
 
     //Checks validity of filePath.
     fileChecker(filePath);
-    free(filePath);
+    //free(filePath);
 
     //Checks validity of header of file.
     headerChecker();
 
+    //Parses line-by-line, validating and collecting name data.
     lineChecker();
 
+    //Sorts name data structure.
     sortStructure();
 
+    //Outputs 10 names with most occurances.
     print10Names();
 
 
